@@ -1,0 +1,22 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+//递归-求字符串长度
+int my_strlen(char* str)
+{
+	int count = 0;
+	while (*str != '\0')
+	{
+		str++; 
+		count++;
+	}
+	return count;
+}
+int main()
+{
+	char arr[20] = {0};
+	scanf("%s", &arr);
+	int len = my_strlen(arr);
+	printf("len=%d\n", len);
+	return 0;
+}
