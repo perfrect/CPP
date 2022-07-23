@@ -1,16 +1,24 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include <stdio.h>
-//递归-求字符串长度
+//这不是递归的方法
+//int my_strlen(char* str)
+//{
+//	int count = 0;//临时变量
+//	while (*str != '\0')
+//	{
+//		str++; 
+//		count++;
+//	}
+//	return count;
+//}
+      //递归的方法-递归-求字符串长度
 int my_strlen(char* str)
 {
-	int count = 0;
-	while (*str != '\0')
-	{
-		str++; 
-		count++;
-	}
-	return count;
+	if (*str != '\0')
+		return 1 + my_strlen(str + 1);
+	else
+		return 0;
 }
 int main()
 {
