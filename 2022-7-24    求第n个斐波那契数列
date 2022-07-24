@@ -1,0 +1,33 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+
+//z这种算法是从后往前算，会重复计算很多数 效率低！
+//int Fib(int n)
+//{
+//	if (n <= 2)
+//		return 1;
+//	else
+//		return Fib(n - 1) + Fib(n - 2);
+//}
+
+int Fib (int n)
+{
+	int a = 1, b = 1, c = 1;
+	while (n > 2)        //从前面往后面算 效率好
+	{
+		c = a + b;
+		a = b;
+		b = c;
+		n--;
+	}
+	  return c;	
+}
+int main()
+{
+	int n = 0, ret = 0;
+	scanf("%d", &n);
+	ret = Fib(n);
+	printf("ret=%d\n", ret);
+	return 0;
+}
