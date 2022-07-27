@@ -1,0 +1,297 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "rapidgfx.h"
+#pragma comment(lib, "RapidGfx.lib")
+
+
+#define window_width 960
+#define window_height 640
+#define grid_size 32
+#define grid_cols (window_width / grid_size)
+#define grid_rows (window_height / grid_size)
+
+typedef struct
+{
+	void* scene;
+	void (*Update)(void*);
+	void (*Destroy)(void*);
+}Stage;
+
+Stage* current_stage = NULL;
+
+void DestroyCurrentStage()
+{
+	if(current_stage)
+		current_stage->Destroy(current_stage->scene);
+	current_stage = NULL;
+}
+
+void SwitchToMenu();
+void SwitchToGame();
+
+
+typedef struct
+{
+	RG_Texture* background;
+}Menu;
+
+Menu* CreateMenu()
+{
+	Menu* menu = malloc(sizeof(Menu));
+	menu->background = RG_LoadTexture("assets/menu_background.png");
+	return menu;
+}
+
+void DestroyMenu(Menu* menu)
+{
+	RG_UnloadTexture(menu->background);
+}
+
+void UpdateMenu(Menu* menu)
+{
+	int mx, my;
+	int start = 0;
+	RG_Color c, c2 = {255, 255, 255, 255};
+	RG_DrawTexture(menu->background, 0, 0);
+	RG_DrawText("\xe8\xb4\xaa\xe5\x90\x83\xe8\x9b\x87", 400, 100, NULL, 60, NULL);
+
+	RG_MousePos(&mx, &my);	
+	if(mx >= 440 && mx <= 550 && my >= 250 && my <= 320)
+	{
+		RG_Color c3 = {255, 0, 0, 255};
+		c = c3;
+		if(RG_MouseButtonState("Left"))
+		{
+			RG_Color c4 = {255, 255, 0, 255};
+			c = c4;
+			start = 1;
+		}
+	}
+	else
+	{
+		RG_Color c4 = {0, 0, 0, 255};
+		c = c4;
+	}
+	RG_DrawText("\xe5\xbc\x80\xe5\xa7\x8b", 460, 300, NULL, 36, &c);
+	RG_DrawText("powered by RapidGfx", 650, 600, NULL, 24, &c2);
+
+	if(RG_KeyState("Enter") || RG_KeyState(" "))
+		start = 1;
+	if(start)
+		SwitchToGame();
+}
+
+void SwitchToMenu()
+{
+	DestroyCurrentStage();
+	current_stage = malloc(sizeof(Stage));
+	current_stage->scene = CreateMenu();
+	current_stage->Update = UpdateMenu;
+	current_stage->Destroy = DestroyMenu;
+}
+
+typedef struct
+{
+	int x, y;
+}Point;
+
+typedef struct
+{
+	RG_Texture* background;
+	RG_Texture* head_tex;
+	RG_Texture* body_tex;
+	RG_Texture* target_tex;
+
+	Point body[256];
+	int body_len;
+	
+	int dir;
+	int next_dir;
+
+	Point target;
+	float time;
+	float interval;
+
+	int over;
+}Game;
+
+void SpawnTarget(Game* game)
+{	
+	int inbody = 0;
+	do
+	{
+		int i;
+		game->target.x = rand() % grid_cols;
+		game->target.y = rand() % grid_rows;	
+		for(i = 0; i < game->body_len; i++)
+		{
+			if(game->body[i].x == game->target.x && 
+				game->body[i].y == game->target.y)
+			{
+				inbody = 1;
+				break;
+			}
+		}
+	}while(inbody);
+
+}
+
+Game* CreateGame()
+{
+	int i;
+	Game* game = malloc(sizeof(Game));
+	memset(game, 0, sizeof(Game));
+	game->background = RG_LoadTexture("assets/game_background.png");
+	game->head_tex = RG_LoadTexture("assets/head.png");
+	game->body_tex = RG_LoadTexture("assets/body.png");
+	game->target_tex = RG_LoadTexture("assets/target.png");
+
+	game->body_len = 3;
+	for(i = 0; i < game->body_len; i++)
+	{
+		Point p;
+		p.x = 10 - i;
+		p.y = 10;
+		game->body[i] = p;
+	}
+
+	game->dir = 2;
+	game->next_dir = 2;
+	SpawnTarget(game);
+	game->interval = 1.0f;
+	return game;
+}
+
+void DestroyGame(Game* game)
+{
+	RG_UnloadTexture(game->background);
+	RG_UnloadTexture(game->head_tex);
+	RG_UnloadTexture(game->body_tex);
+	RG_UnloadTexture(game->target_tex);
+}
+
+void DrawSnake(Game* game)
+{
+	int i;
+	for(i = 0; i < game->body_len; i++)
+	{
+		Point p = game->body[i];
+		RG_DrawTexture(i? game->body_tex : game->head_tex, p.x * (float)grid_size, p.y*(float)grid_size);
+	}
+}
+
+void DrawGame(Game* game)
+{	
+	char sbuf[256];
+	RG_Color c = {255, 255, 255, 200};
+	RG_DrawTexture(game->background, 0, 0);
+	RG_DrawTexture(game->target_tex, game->target.x * (float)grid_size, game->target.y * (float)grid_size);
+	DrawSnake(game);
+	sprintf(sbuf, "Score:%d", game->body_len - 3);
+	RG_DrawText(sbuf, 50, 50, NULL, 32, &c);	
+	if(game->over)
+	{
+		RG_Color c2 = {255, 0, 0, 100};
+		RG_DrawText("GAME OVER", 300, 300, NULL, 64, &c2);		
+	}
+}
+
+void SnakeControl(Game* game)
+{
+	int d = game->next_dir;
+	if(RG_KeyState("W") || RG_KeyState("Up"))
+	{
+		d = 1;
+	}
+	if(RG_KeyState("A") || RG_KeyState("Left"))
+	{
+		d = 0;
+	}
+	if(RG_KeyState("S") || RG_KeyState("Down"))
+	{
+		d = 3;
+	}
+	if(RG_KeyState("D") || RG_KeyState("Right"))
+	{
+		d = 2;
+	}
+	if(abs(d - game->dir) == 2)
+		return;
+	game->next_dir = d;
+}
+
+void MoveSnake(Game* game)
+{
+	int i;
+	int reach_target = 0;
+	int dx_arr[] = {-1, 0, 1, 0};
+	int dy_arr[] = {0, -1, 0, 1};
+	Point nextp = game->body[0];
+	game->dir = game->next_dir;
+	nextp.x = (nextp.x + dx_arr[game->dir] + grid_cols) % grid_cols;
+	nextp.y = (nextp.y + dy_arr[game->dir] + grid_rows) % grid_rows;
+
+	if(nextp.x == game->target.x && nextp.y == game->target.y)
+	{
+		game->body_len++;
+		reach_target = 1;
+	}	
+	for(i = game->body_len - 1; i > 0; i--)
+	{
+		game->body[i] = game->body[i - 1];
+		if(game->body[i].x == nextp.x && game->body[i].y == nextp.y)
+		{
+			game->over = 1;
+			return;
+		}
+	}
+	game->body[0] = nextp;
+
+	if(reach_target)
+	{
+		SpawnTarget(game);
+	}
+}
+
+void UpdateGame(Game* game)
+{
+	game->time += RG_DeltaTime();
+	SnakeControl(game);
+	game->interval = 1.0f / game->body_len;
+	if(game->time >= game->interval && !game->over)
+	{
+
+		MoveSnake(game);
+		game->time -= game->interval;
+	}
+	DrawGame(game);	
+	if(game->over && (RG_KeyState("Enter") || RG_KeyState(" ")))
+	{
+		SwitchToMenu();
+	}
+}
+
+void SwitchToGame()
+{
+	DestroyCurrentStage();
+	current_stage = malloc(sizeof(Stage));
+	current_stage->scene = CreateGame();
+	current_stage->Update = UpdateGame;
+	current_stage->Destroy = DestroyGame;
+}
+
+int main()
+{	
+	RG_Init(window_width, window_height, "snake");	
+	SwitchToMenu();
+	while(RG_Update())
+	{
+		if(current_stage)
+			current_stage->Update(current_stage->scene);
+	}
+	DestroyCurrentStage();
+	RG_Shutdown();
+	return 0;
+}
