@@ -114,34 +114,53 @@ void SetMine(char board[ROWS][COLS], int row, int col)
 	}
 }
 
-int get_mine_count(char mine[ROWS][COLS], char show[ROWS][COLS], int row, int col)
+int get_mine_count(char mine[ROWS][COLS], int x, int y)
 {
-
+	return mine[x - 1][y] +
+		mine[x - 1][y - 1] +
+		mine[x][y - 1] +
+		mine[x + 1][y - 1] +
+		mine[x + 1][y] +
+		mine[x - +1][y + 1] +
+		mine[x][y + 1] +
+		mine[x - 1][y + 1] - 8 * '0';
 }
 
 void FindMine(char mine[ROWS][COLS], char show[ROWS][COLS], int row, int col)
 {
 	int x = 0, y = 0;
-	printf("请输出坐标：");
-	scanf("%d%d", &x, &y);
-	if (x >= 1 && x <= row && y >= 1 && y <= col)
+	int win = 0;
+	while (win<row*col-EASY_COUNT) 
 	{
-		//坐标合法
-		//1.踩雷
-		if (mine[x][y] == '1')
+		printf("请输出坐标：");
+		scanf("%d%d", &x, &y);
+		if (x >= 1 && x <= row && y >= 1 && y <= col)
 		{
-			printf("游戏结束\n");
-			DisplayBoard(mine, row, col);
-			break;
+			//坐标合法
+			//1.踩雷
+			if (mine[x][y] == '1')
+			{
+				printf("游戏结束\n");
+				DisplayBoard(mine, row, col);
+				break;
+			}
+			else//不踩雷
+			{
+				int count = get_mine_count(mine, x, y);
+				show[x][y] = count + '0';
+				DisplayBoard(show, row, col);
+				win++;
+			}
 		}
-		else//不踩雷
+		else
 		{
-			int caount = get_mine_count(mine, x, y);
+			printf("输入错误，重新输入！");
 		}
 	}
-	else
+	if (win < row * col - EASY_COUNT)
 	{
-		printf("输入错误，重新输入！")；
+		printf("排雷成功！");
+		DisplayBoard(mine, row, col);
 	}
 }
 
