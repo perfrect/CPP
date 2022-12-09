@@ -1,0 +1,173 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+#define InitSize 10
+
+typedef struct
+{
+	int length;
+	int Maxsize;
+	int* data;
+}SqList;
+ 
+
+void InitList (SqList& L)
+{
+	L.data = (int*)malloc(InitSize * sizeof(int));//malloc申请空间
+	L.length = 0;//当前长度初始化为0
+	L.Maxsize = InitSize;//顺序表最大长度
+}
+
+void WriteList(SqList& L)//把元素放入顺序表
+{
+	printf("请输入你要创建的顺序表的长度：");
+	scanf("%d", &L.length);
+	printf("请输入%d个你要放入顺序表里的元素：", L.length);
+	for (int i = 0; i < L.length; i++)
+		scanf("%d", &L.data[i]);
+}
+
+
+void IncreaseSize(SqList& L)//增加顺序表长度
+{
+	int len;
+	int* p = L.data;
+	printf("请输出增加的长度：");
+	scanf("%d", &len);
+	L.data = (int*)malloc((L.Maxsize + len) * sizeof(int));//新申请的空间
+	for (int i = 0; i < L.length; i++)
+		L.data[i] = p[i];//把值一个个复制过去
+	L.Maxsize = L.Maxsize + len;
+	free(p);
+}
+
+bool ListInsret(SqList& L)//顺序表的插入
+{
+	int i, e;
+	printf("要插入的元素和元素位置：");
+	scanf("%d %d", &e, &i);
+	if (i<1 || i>L.length + 1)//判断元素是否越界
+	{
+		return false;
+	}
+	if (L.length > L.Maxsize)//判断顺序表存储空间是否满了
+	{
+		return false;
+	}
+	for (int j = L.length; j >= i; j--)
+	{
+		L.data[j] = L.data[j - 1];//从后往前逐个后移元素
+	}
+	L.data[i - 1] = e;//将新元素放入下标为i-的位置
+	L.length++;
+	printf("插入的元素是%d,插入的位置是%d", e, i);
+	return true;
+}
+
+bool ListDelete(SqList& L)
+{
+	int e, i;
+	printf("删除的元素的位置:");
+	scanf("%d", &i);
+	if (i<1 || i>L.length + 1)
+	{
+		return false;
+	}
+	if (!L.data)
+	{
+		printf("空表");
+		return false;
+	}
+	e = L.data[i - 1];
+	for (int j = i; j <= L.length; j++)
+	{
+		L.data[j - 1] = L.data[j];
+	}
+	L.length--;
+	printf("删除的元素是%d,位置是%d\n", e, i);
+	return true;
+}
+
+bool GetElem(SqList& L)//按位查找
+{
+	int i;
+	printf("你要找的第几个元素：");
+	scanf("%d", &i);
+	if (i<1 || i>L.length + 1)
+	{
+		printf("查找失败");
+		return false;
+	}
+	printf("第%d个元素是%d\n", i, L.data [i- 1]);
+	return true;
+}
+void LocateElem(SqList& L)
+{
+	int e;
+	int k = 1;
+	printf("输入你要查找的元素：");
+	scanf("%d", &e);
+	for (int i = 0; i < L.length; i++)
+	{
+		if (L.data[i] == e)
+		{
+			printf("是第%d个元素\n", i + 1);
+			k = 0;
+			break;
+		}
+	}
+}
+
+bool PrintList(SqList& L)//打印顺序表
+{
+	if (!L.data)
+		return false;
+	printf("顺序表里的元素有：");
+	for (int i = 0; i < L.length; i++)
+		printf("%d ", L.data[i]);
+	printf("\n");
+	return true;
+}
+int Length(SqList& L)//求表长
+{
+	if (L.length == 0)
+		return 0;
+	return L.length;
+}
+
+void DestroyList(SqList& L)
+{
+	char a;
+	getchar();
+	printf("是否销毁顺序表(Y/N):");
+	scanf("%c", &a);
+	if (a == 'Y')
+	{
+		L.length = 0;
+		L.Maxsize = 0;
+		free(L.data);//释放空间
+		printf("顺序表已销毁\n");
+	}
+}
+
+
+int main()
+{
+	SqList L;
+	InitList(L);
+	WriteList(L);
+	PrintList(L);
+	IncreaseSize(L);
+	ListInsret(L);
+	PrintList(L);
+	ListDelete(L);
+	PrintList(L);
+	GetElem(L);
+	LocateElem(L);
+	int len = Length(L);
+	printf("顺序表的表长:%d\n", len);
+	DestroyList(L);
+	return 0;
+}
+
